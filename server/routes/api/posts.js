@@ -28,7 +28,8 @@ router.delete('/:id', async (req, res) => {
 
 async function loadPostsCollection() {
     const client = await mongodb.MongoClient.connect('mongodb+srv://awk53:Sh84rWdv7LfLmyqj@fullstackpr03.cn4lsjb.mongodb.net/?retryWrites=true&w=majority&appName=FullStackPr03', {
-        useNewUrlParser: true
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
     });
     
     return client.db('FullStackPr03').collection('posts');
