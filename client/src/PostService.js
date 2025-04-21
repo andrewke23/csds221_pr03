@@ -34,7 +34,7 @@ class PostService {
     static updatePost(id, text) {
         return new Promise((resolve, reject) => {
           axios
-            .put(`${url}${id}`, { text })
+            .put(`${url}/${id}`, { text })
             .then(res => resolve(res.data))
             .catch(err => reject(err));
         });
