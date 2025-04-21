@@ -25,7 +25,7 @@ class PostService {
 
     // Delete Post
     static deletePost(id) {
-        return axios.delete(`${url}/${id}`);
+        return axios.delete(`${url}${id}`);
     }
 
     // Update Post
