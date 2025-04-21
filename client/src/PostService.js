@@ -25,9 +25,16 @@ class PostService {
 
     // Delete Post
     static deletePost(id) {
-        const cleanId = id.replace(/^\/+/, ''); // Remove any leading slash
-        console.log('Deleting post with ID:', id);
-        return axios.delete(`${url}/${cleanId}`);
+        // Log the ID before cleaning to make sure we understand the problem
+        console.log('Original ID before cleaning:', id);
+    
+        const cleanId = id.replace(/^\/+/, ''); // Remove leading slashes
+        console.log('Cleaned ID:', cleanId);
+    
+        const fullUrl = `${url}/${cleanId}`;
+        console.log('Full delete URL:', fullUrl); // Log full URL for the delete request
+    
+        return axios.delete(fullUrl);  // Make the actual delete request
     }
 
     // Update Post
