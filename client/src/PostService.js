@@ -25,6 +25,7 @@ class PostService {
 
     // Delete Post
     static deletePost(id) {
+        console.log('Deleting post with ID:', id);
         return axios.delete(`${url}${id}`);
     }
 
