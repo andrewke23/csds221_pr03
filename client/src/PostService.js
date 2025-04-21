@@ -27,6 +27,16 @@ class PostService {
     static deletePost(id) {
         return axios.delete(`${url}${id}`);
     }
+
+    // Update Post
+    static updatePost(id, text) {
+        return new Promise((resolve, reject) => {
+          axios
+            .put(`${url}/${id}`, { text })
+            .then(res => resolve(res.data))
+            .catch(err => reject(err));
+        });
+    }
 }
 
 export default PostService;

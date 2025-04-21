@@ -4,32 +4,52 @@
     <button class="toggle-btn" @click="toggleDarkMode">
       {{ isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode' }}
     </button>
+    <div class="search-bar">
+      <input
+        type="text"
+        v-model="searchQuery"
+        placeholder="Search posts..."
+      />
+    </div>
+    <p v-if="filteredPosts.length === 0 && searchQuery">No results found.</p>
 
     <div class="create-post">
       <label for="create-post">Say something..</label>
-      <input type="text" id="create-post" v-model="text" placeholder="Create a post">
+      <input type="text" id="create-post" v-model="text" placeholder="Create a post"   @keyup.enter="createPost"
+      >
       <button v-on:click="createPost">Post!</button>
     </div>
     <hr>
     <p class="error" v-if="error">{{ error }}</p>
     <div class="posts-container">
       <div class="post"
-        v-for="(post, index) in posts"
+        v-for="(post, index) in filteredPosts"
         v-bind:item="post"
         v-bind:index="index"
         v-bind:key="post._id"
-        @dblclick="deletePost(post._id)"
       >
+      <button class="delete-btn" @click="deletePost(post._id)">×</button>
+
         <div class="created-at">
-          {{ new Date(post.createdAt).toLocaleDateString() }}
+          {{ new Date(post.createdAt).toLocaleString() }}
         </div>
-        <p class="text">{{ post.text }}</p>
+        <div v-if="editingPostId === post._id">
+          <input v-model="editedText" />
+          <button @click="saveEdit(post)">Save</button>
+          <button @click="cancelEditing">Cancel</button>
+        </div>
+        <div v-else>
+          <p class="text">{{ post.text }}</p>
+          <button class="edit-btn" @click="startEditing(post)">✏️ Edit</button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import toastr from 'toastr';
+import 'toastr/build/toastr.min.css';
 import PostService from '@/PostService';
 
 export default {
@@ -40,6 +60,9 @@ export default {
       error: '',
       text: '',
       isDarkMode: false,
+      searchQuery: '',
+      editingPostId: null,       // ID of the post currently being edited
+      editedText: '' 
     };
   },
   async created() {
@@ -51,18 +74,33 @@ export default {
   },
   methods: {
     async createPost() {
+    if (!this.text.trim()) {
+      toastr.warning('Post text cannot be empty!', 'Warning');
+      return;
+    }
+
+    try {
       await PostService.insertPost(this.text);
+      this.text = '';
       this.posts = (await PostService.getPosts()).reverse();
-    },
-    async deletePost(id) {
-      try {
-        await PostService.deletePost(id);
-        this.posts = this.posts.filter(post => post._id !== id); // update local state
-      } catch (err) {
-        this.error = 'Failed to delete post.';
-        console.error(err);
-      }
-    },
+      toastr.success('Post created successfully!', 'Success');
+    } catch (err) {
+      toastr.error('Failed to create post.', 'Error');
+      console.error(err);
+    }
+  },
+
+  async deletePost(id) {
+    try {
+      await PostService.deletePost(id);
+      this.posts = this.posts.filter(post => post._id !== id);
+      toastr.info('Post deleted.', 'Info');
+    } catch (err) {
+      this.error = 'Failed to delete post.';
+      toastr.error('Failed to delete post.', 'Error');
+      console.error(err);
+    }
+  },
     toggleDarkMode() {
       this.isDarkMode = !this.isDarkMode; // Toggle dark mode
       if (this.isDarkMode) {
@@ -70,9 +108,42 @@ export default {
       } else {
         document.body.classList.remove('custom-dark-mode');
       }
+    },
+    startEditing(post) {
+    this.editingPostId = post._id;
+    this.editedText = post.text;
+    },
+
+    cancelEditing() {
+      this.editingPostId = null;
+      this.editedText = '';
+    },
+
+    async saveEdit(post) {
+      if (!this.editedText.trim()) {
+        toastr.warning("Post cannot be empty.");
+        return;
+      }
+
+      try {
+        await PostService.updatePost(post._id, this.editedText);
+        this.posts = (await PostService.getPosts()).reverse();
+        toastr.success("Post updated.");
+        this.cancelEditing();
+      } catch (err) {
+        toastr.error("Failed to update post.");
+      }
     }
+  },
+  computed: {
+  filteredPosts() {
+    return this.posts.filter(post =>
+      post.text.toLowerCase().includes(this.searchQuery.toLowerCase())
+    );
   }
+}
 };
+
 </script>
 
 <style>
@@ -169,6 +240,21 @@ p.error {
   padding: 10px;
   margin-bottom: 15px;
 }
+.delete-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  color: #999;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.delete-btn:hover {
+  color: red;
+}
 
 /* Dark mode styles */
 body.custom-dark-mode {
@@ -249,6 +335,32 @@ body.custom-dark-mode .toggle-btn:hover {
 }
 body.custom-dark-mode .create-post label {
   color: white;
+}
+.search-bar {
+  margin-bottom: 20px;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+}
+.edit-btn {
+  position: absolute;
+  top: 10px;
+  right: 35px;
+  background-color: transparent;
+  color: #888;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.edit-btn:hover {
+  color: #552583;
 }
 
 </style>
